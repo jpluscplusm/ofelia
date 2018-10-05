@@ -19,10 +19,11 @@ type Config struct {
 		middlewares.SaveConfig
 		middlewares.MailConfig
 	}
-	ExecJobs    map[string]*ExecJobConfig    `gcfg:"job-exec"`
-	RunJobs     map[string]*RunJobConfig     `gcfg:"job-run"`
-	ServiceJobs map[string]*RunServiceConfig `gcfg:"job-service-run"`
-	LocalJobs   map[string]*LocalJobConfig   `gcfg:"job-local"`
+	ExecJobs          map[string]*ExecJobConfig          `gcfg:"job-exec"`
+	RunJobs           map[string]*RunJobConfig           `gcfg:"job-run"`
+	ServiceJobs       map[string]*RunServiceConfig       `gcfg:"job-service-run"`
+	LocalJobs         map[string]*LocalJobConfig         `gcfg:"job-local"`
+	CloudFoundryTasks map[string]*CloudFoundryTaskConfig `gcfg:"job-cftask"`
 }
 
 // BuildFromFile buils a scheduler using the config from a file
@@ -86,6 +87,14 @@ func (c *Config) build() (*core.Scheduler, error) {
 		defaults.SetDefaults(j)
 		j.Name = name
 		j.Client = d
+		j.buildMiddlewares()
+		sh.AddJob(j)
+	}
+
+	for name, j := range c.CloudFoundryTasks {
+		defaults.SetDefaults(j)
+
+		j.Name = name
 		j.buildMiddlewares()
 		sh.AddJob(j)
 	}
@@ -175,4 +184,20 @@ func (c *RunServiceConfig) buildMiddlewares() {
 	c.RunServiceJob.Use(middlewares.NewSlack(&c.SlackConfig))
 	c.RunServiceJob.Use(middlewares.NewSave(&c.SaveConfig))
 	c.RunServiceJob.Use(middlewares.NewMail(&c.MailConfig))
+}
+
+// CloudFoundryTaskConfig contains all configuration params needed to build a CloudFoundryTask
+type CloudFoundryTaskConfig struct {
+	core.CloudFoundryTask
+	middlewares.OverlapConfig
+	middlewares.SlackConfig
+	middlewares.SaveConfig
+	middlewares.MailConfig
+}
+
+func (c *CloudFoundryTaskConfig) buildMiddlewares() {
+	c.CloudFoundryTask.Use(middlewares.NewOverlap(&c.OverlapConfig))
+	c.CloudFoundryTask.Use(middlewares.NewSlack(&c.SlackConfig))
+	c.CloudFoundryTask.Use(middlewares.NewSave(&c.SaveConfig))
+	c.CloudFoundryTask.Use(middlewares.NewMail(&c.MailConfig))
 }
