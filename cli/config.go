@@ -10,7 +10,7 @@ import (
 	"gopkg.in/gcfg.v1"
 )
 
-const logFormat = "%{color}%{shortfile} ▶ %{level}%{color:reset} %{message}"
+const logFormat = "%{color}%{shortfile} >> %{level}%{color:reset} %{message}"
 
 // Config contains the configuration
 type Config struct {
