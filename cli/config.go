@@ -91,12 +91,16 @@ func (c *Config) build() (*core.Scheduler, error) {
 		sh.AddJob(j)
 	}
 
-	for name, j := range c.CloudFoundryTasks {
-		defaults.SetDefaults(j)
-
-		j.Name = name
-		j.buildMiddlewares()
-		sh.AddJob(j)
+	cfc, cfa, err := core.BuildCloudFoundryContext()
+	if err == nil {
+		for name, j := range c.CloudFoundryTasks {
+			defaults.SetDefaults(j)
+			j.Client = cfc
+			j.Env = cfa
+			j.Name = name
+			j.buildMiddlewares()
+			sh.AddJob(j)
+		}
 	}
 
 	return sh, nil
